@@ -109,17 +109,20 @@ p_rot_velocity = 0  # Smooth rotation momentum
 weapons = {
     'pistol': {
         'name': 'Pistol', 'damage': 12, 'fire_rate': 0.35, 'spread': 0.8,
-        'shot_speed': 28, 'shot_size': 5, 'ammo': 50, 'max_ammo': 50,
+        'shot_speed': 28, 'shot_size': 5, 'ammo': 15, 'max_ammo': 15,
+        'reserve': 90, 'max_reserve': 90,
         'color': (1.0, 0.85, 0.2), 'pellets': 1, 'reload_time': 1.2,
     },
     'assault_rifle': {
         'name': 'Assault Rifle', 'damage': 10, 'fire_rate': 0.12, 'spread': 1.2,
-        'shot_speed': 32, 'shot_size': 6, 'ammo': 120, 'max_ammo': 120,
+        'shot_speed': 32, 'shot_size': 6, 'ammo': 30, 'max_ammo': 30,
+        'reserve': 150, 'max_reserve': 150,
         'color': (1.0, 0.6, 0.0), 'pellets': 1, 'reload_time': 2.0,
     },
     'shotgun': {
         'name': 'Shotgun', 'damage': 8, 'fire_rate': 0.8, 'spread': 6.0,
-        'shot_speed': 24, 'shot_size': 4, 'ammo': 24, 'max_ammo': 24,
+        'shot_speed': 24, 'shot_size': 4, 'ammo': 8, 'max_ammo': 8,
+        'reserve': 32, 'max_reserve': 32,
         'color': (1.0, 0.3, 0.1), 'pellets': 6, 'reload_time': 2.5,
     },
 }
@@ -431,12 +434,12 @@ def draw_hud():
     # Weapon indicator (bottom center)
     w = weapons[current_weapon]
     weap_name = w['name']
-    ammo_text = f"{w['ammo']}/{w['max_ammo']}"
-    weap_x = WIN_W // 2 - 80
+    ammo_text = f"{w['ammo']} | {w['reserve']}"
+    weap_x = WIN_W // 2 - 85
     weap_y = 55
     draw_text_2d(weap_x, weap_y + 20, weap_name, GLUT_BITMAP_HELVETICA_18, (0.15, 0.15, 0.25))
     ammo_color = (0.15, 0.15, 0.25) if w['ammo'] > w['max_ammo'] * 0.25 else (0.9, 0.15, 0.15)
-    draw_text_2d(weap_x + 130, weap_y + 20, ammo_text, GLUT_BITMAP_HELVETICA_18, ammo_color)
+    draw_text_2d(weap_x + 135, weap_y + 20, ammo_text, GLUT_BITMAP_HELVETICA_18, ammo_color)
     draw_bar(weap_x, weap_y, 170, 10, w['ammo'], w['max_ammo'], (0.15, 0.15, 0.2), (0.3, 0.7, 0.9))
     if reload_timer > 0:
         draw_text_2d(weap_x + 30, weap_y + 40, "RELOADING...", GLUT_BITMAP_HELVETICA_18, (1, 0.5, 0))
@@ -1773,9 +1776,13 @@ def start_reload():
     """Start reloading the current weapon"""
     global reload_timer
     w = weapons[current_weapon]
-    if w['ammo'] < w['max_ammo'] and reload_timer <= 0:
-        reload_timer = w['reload_time']
-        add_notification(f"Reloading {w['name']}...", (0.8, 0.8, 0.2), 1.5)
+    if reload_timer > 0 or w['ammo'] >= w['max_ammo']:
+        return
+    if w['reserve'] <= 0:
+        add_notification("No ammo!", (1.0, 0.2, 0.2), 1.5)
+        return
+    reload_timer = w['reload_time']
+    add_notification(f"Reloading {w['name']}...", (0.8, 0.8, 0.2), 1.5)
 
 
 def switch_weapon(index):
@@ -2367,6 +2374,7 @@ def init_game():
     current_weapon = 'assault_rifle'
     for w in weapons.values():
         w['ammo'] = w['max_ammo']
+        w['reserve'] = w['max_reserve']
 
     shots.clear()
     enemy_shots.clear()
@@ -2590,8 +2598,12 @@ def idle():
             reload_timer -= delta_time
             if reload_timer <= 0:
                 reload_timer = 0
-                weapons[current_weapon]['ammo'] = weapons[current_weapon]['max_ammo']
-                add_notification(f"{weapons[current_weapon]['name']} reloaded!", (0.2, 1, 0.2), 1.5)
+                w = weapons[current_weapon]
+                needed = w['max_ammo'] - w['ammo']
+                actual = min(needed, w['reserve'])
+                w['ammo'] += actual
+                w['reserve'] -= actual
+                add_notification(f"{w['name']} reloaded! ({w['ammo']}/{w['reserve']} left)", (0.2, 1, 0.2), 1.5)
 
         # Respawn enemies if too few alive
         alive_count = sum(1 for e in enemies if e['alive'])
