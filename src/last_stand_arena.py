@@ -1,17 +1,19 @@
 """
-Target Frenzy 3D - Battle Royale Edition
-A fast-paced 3D arena shooter with battle royale mechanics
+Last Stand Arena
+A fast-paced 3D battle royale arena shooter
 
 Features:
-- Large battle arena with obstacles for cover
+- Massive battle arena with procedural obstacles
 - Shrinking battle royale zone
 - 4 enemy types with unique AI and shooting abilities
+- 3-weapon system: Pistol, Assault Rifle, Shotgun
 - Level/wave progression system
 - Power-up system (Health, Speed, Damage, Shield)
 - Sprint mechanic with stamina
+- Headshot detection with hit markers and floating damage numbers
 - Combo/kill streak scoring
-- Player name entry and stats tracking
-- Minimap, HUD bars, and particle effects
+- Player name entry and detailed end-game stats
+- Minimap, full HUD, and particle effects
 
 Author: Fahad Nadim Ziad
 Copyright: (c) 2026 Fahad Nadim Ziad
@@ -631,7 +633,7 @@ def draw_name_entry():
     begin_2d()
     draw_rect(0, 0, WIN_W, WIN_H, (0.82, 0.88, 0.95))
 
-    draw_text_2d(WIN_W // 2 - 160, WIN_H // 2 + 180, "TARGET FRENZY 3D",
+    draw_text_2d(WIN_W // 2 - 160, WIN_H // 2 + 180, "LAST STAND ARENA",
                  GLUT_BITMAP_TIMES_ROMAN_24, (0.2, 0.4, 0.15))
     draw_text_2d(WIN_W // 2 - 120, WIN_H // 2 + 150, "- BATTLE ROYALE EDITION -",
                  GLUT_BITMAP_HELVETICA_18, (0.5, 0.35, 0.1))
@@ -673,7 +675,7 @@ def draw_guidelines():
     cx = WIN_W // 2
     y = WIN_H - 60
 
-    draw_text_2d(cx - 120, y, "TARGET FRENZY 3D", GLUT_BITMAP_TIMES_ROMAN_24, (0.2, 0.4, 0.15))
+    draw_text_2d(cx - 120, y, "LAST STAND ARENA", GLUT_BITMAP_TIMES_ROMAN_24, (0.2, 0.4, 0.15))
     y -= 50
 
     draw_text_2d(cx - 80, y, "=== CONTROLS ===", GLUT_BITMAP_HELVETICA_18, (0.15, 0.4, 0.6))
@@ -2667,7 +2669,7 @@ def main():
 
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(WIN_W, WIN_H)
-    glutCreateWindow(b"Target Frenzy 3D - Battle Royale")
+    glutCreateWindow(b"Last Stand Arena")
     glutFullScreen()
 
     init_graphics()

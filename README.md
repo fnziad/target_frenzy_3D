@@ -1,209 +1,156 @@
 <p align="center">
-  <h1 align="center">🎯 Target Frenzy 3D — Battle Royale Edition</h1>
+  <h1 align="center">Last Stand Arena</h1>
   <p align="center">
-    A fast-paced 3D arena shooter with battle royale mechanics, multi-weapon combat, and progressive difficulty — built entirely in Python with OpenGL.
+    A complete 3D battle royale arena shooter — built from scratch in Python with OpenGL. Survive. Eliminate. Dominate.
   </p>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.7+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
-  <img src="https://img.shields.io/badge/OpenGL-GLUT-5586A4?style=for-the-badge&logo=opengl&logoColor=white" alt="OpenGL"/>
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License"/>
-  <img src="https://img.shields.io/badge/Lines_of_Code-2600+-orange?style=for-the-badge" alt="LOC"/>
+  <img src="https://img.shields.io/badge/Python-3.7+-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/OpenGL-PyOpenGL-5586A4?style=for-the-badge&logo=opengl&logoColor=white"/>
+  <img src="https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Lines_of_Code-2600+-f97316?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-8b5cf6?style=for-the-badge"/>
 </p>
 
 ---
 
-## About
+## About the Game
 
-**Target Frenzy 3D** is a complete 3D battle royale shooter game written from scratch in Python using OpenGL (via PyOpenGL and GLUT). It features a massive arena, 3 switchable weapons, 4 enemy AI types, a shrinking battle royale zone, power-ups with distinct 3D models, headshot mechanics, hit markers, floating damage numbers, and a full HUD with minimap.
+**Last Stand Arena** is a real-time 3D battle royale shooter written entirely in Python using the OpenGL fixed-function pipeline. All geometry, AI, physics, rendering, and UI are hand-coded from scratch — no game engine, no assets, just pure code.
 
-> **Made by Fahad Nadim Ziad — 2026**
+Fight through waves of intelligent enemies across a massive arena while a shrinking zone forces you into relentless action. Switch between three weapons, land headshots, chain combo kills, and survive as long as you can.
+
+> Made by **Fahad Nadim Ziad** — 2026
 
 ---
 
-## Features
+## Features at a Glance
 
-### 🔫 Multi-Weapon System
+### 🔫 Three-Weapon Arsenal
 
-| Weapon            | Key | Damage | Fire Rate | Spread | Ammo | Special               |
-| ----------------- | --- | ------ | --------- | ------ | ---- | --------------------- |
-| **Pistol**        | `1` | 12     | Slow      | Tight  | 50   | Precise, quick reload |
-| **Assault Rifle** | `2` | 10     | Fast      | Medium | 120  | Full-auto tracer      |
-| **Shotgun**       | `3` | 8×6    | Very Slow | Wide   | 24   | 6 pellets per blast   |
+| Weapon          | Key | Damage | Rate   | Ammo | Style                   |
+|-----------------|:---:|--------|--------|------|-------------------------|
+| Pistol          | `1` | 12     | Slow   | 50   | Precise single shots    |
+| Assault Rifle   | `2` | 10     | Fast   | 120  | Full-auto tracer rounds |
+| Shotgun         | `3` | 8 × 6  | Slow   | 24   | 6-pellet spread blast   |
 
-- Press `R` to reload manually
-- Auto-reload when magazine is empty
-- Kills replenish ammo for all weapons
-- Each weapon has a **unique first-person model** and **distinct projectile visuals**
+- Each weapon has a **unique first-person 3D model** rendered in-engine
+- Manual reload with `R`, auto-reload on empty, ammo refills on kills
 
-### 🎯 Combat Mechanics
+### 👾 Four Enemy Types
 
-- **Headshot System** — Shots hitting the enemy head zone deal **2× damage** with red hit markers
-- **Hit Markers** — White crosshair X-flash on body hits, red on headshots
-- **Floating Damage Numbers** — Damage values pop up on screen with each hit
-- **Kill Score Text** — Green "+points" floats up on eliminations
-- **Muzzle Flash** — Visual flash overlay when firing
+| Type    | HP | Speed | Behaviour                          |
+|---------|----|-------|------------------------------------|
+| Grunt   | 30 | 3.5   | Direct chaser, medium accuracy     |
+| Tank    | 80 | 1.8   | Slow, heavy armour, high damage    |
+| Scout   | 15 | 6.0   | Fast zigzag, hard to track         |
+| Sniper  | 25 | 1.2   | Holds distance, highly accurate    |
 
-### 🏟️ Battle Royale Arena
-
-- **Massive 10,000 × 10,000 unit arena** with green grass terrain
-- **Shrinking Zone** — Forces players inward; outside zone = taking damage
-- **80+ obstacle clusters** (crates) and **30 pillars** for tactical cover
-- **Zone Warning System** — Flashing HUD alert when zone shrinks
-
-### 👾 Enemy AI (4 Types)
-
-| Type       | HP  | Speed | Behavior                        | Threat    |
-| ---------- | --- | ----- | ------------------------------- | --------- |
-| **Grunt**  | 30  | 3.5   | Direct chaser, moderate shooter | Medium    |
-| **Tank**   | 80  | 1.8   | Slow, heavy armor, high damage  | High      |
-| **Scout**  | 15  | 6.0   | Fast zigzag, agile dodger       | Medium    |
-| **Sniper** | 25  | 1.2   | Keeps distance, high accuracy   | Very High |
-
-- Enemies **scale in HP** per level (+12% per level)
 - All enemies **shoot back** with type-specific accuracy and fire rates
-- Progressive spawning with more snipers and tanks at higher levels
+- HP scales with level (+12% per level)
 
-### ⬆️ Power-Ups (3D Visualized)
+### 💊 Power-Ups (with 3D models)
 
-| Power-Up     | Shape                | Color  | Effect                   |
-| ------------ | -------------------- | ------ | ------------------------ |
-| Health Pack  | 3D Cross / Plus      | Green  | Restores 30 HP           |
-| Speed Boost  | Spinning Diamond     | Blue   | 1.5× speed for 10s       |
-| Damage Boost | Spiky Star           | Red    | 2× weapon damage for 10s |
-| Shield       | Dome with Torus Ring | Yellow | 50 HP shield for 15s     |
+| Power-Up     | Shape           | Effect                   |
+|--------------|-----------------|--------------------------|
+| Health Pack  | Green cross     | +30 HP                   |
+| Speed Boost  | Blue diamond    | 1.5× speed for 10 s      |
+| Damage Boost | Red spiky star  | 2× damage for 10 s       |
+| Shield       | Yellow dome     | 50 HP absorb for 15 s    |
 
-Each power-up has a **pulsing glow ring** and **bobbing animation**.
+### 🎯 Combat Feel
 
-### 📊 Scoring & Progression
+- **Headshots** — Upper-body hits deal 2× damage and trigger a red hit marker
+- **Hit markers** — X-shaped crosshair flash on every hit
+- **Floating damage numbers** — Damage pops up on screen in real time
+- **Muzzle flash overlay** — Visual recoil feedback when firing
+- **Particle effects** — Kills and impacts burst with coloured particles
 
-- **Combo System** — Chain kills within 3s for up to **5× multiplier**
-- **Kill Streaks** — Rampage (5), Unstoppable (10), Godlike (15) with bonus points
-- **Headshot Bonus** — 1.5× score on headshot kills
-- **Level System** — Kill enough enemies to advance; each level heals +20 HP
-- **Post-Game Stats** — Score, kills, streak, combo, time survived, accuracy
+### 🏟️ Battle Royale Zone
 
-### 🎨 Visual Features
+- 10 000 × 10 000 unit outdoor arena with procedural crates and pillars
+- Zone shrinks every 60 seconds starting from level 2
+- Getting caught outside the zone deals continuous damage
+- Zone position drifts randomly to keep you moving
 
-- Bright outdoor light theme (sky blue, green grass, daylight)
-- OpenGL lighting, fog, and smooth shading
-- Particle effects on hits, kills, and power-up collection
-- Translucent zone boundary wall
-- Per-enemy health bars
-- Damage flash overlay
-- Shield visualization around player
-- Tactical soldier player model (helmet, vest, rifle, backpack)
+### 📊 Scoring
 
-### 🗺️ HUD
-
-- HP / Shield / Stamina bars
-- Score & combo multiplier
-- Level & kill progress
-- Weapon indicator with ammo bar and slot display
-- Active power-up timers
-- Kill streak notifications
-- Crosshair with hit markers (FP mode)
-- Minimap (enemies, power-ups, zone, obstacles)
-- Zone shrinking warnings
+- Combo multiplier up to **5×** for chaining kills within 3 seconds
+- Kill-streak milestones: **Rampage (×5)**, **Unstoppable (×10)**, **Godlike (×15)**
+- Headshot kills award 1.5× score bonus
+- Full stat screen on death: score, level, kills, streak, combo, time, accuracy
 
 ---
 
 ## Controls
 
-### Movement
-
-| Key            | Action                  |
-| -------------- | ----------------------- |
-| `W` / `S`      | Move forward / backward |
-| `A` / `D`      | Rotate left / right     |
-| `Q` / `E`      | Strafe left / right     |
-| `Shift` + Move | Sprint (uses stamina)   |
-
-### Combat
-
-| Key         | Action                            |
-| ----------- | --------------------------------- |
-| `Space`     | Fire weapon                       |
-| `1`/`2`/`3` | Switch weapon (Pistol/AR/Shotgun) |
-| `R`         | Reload                            |
-
-### Camera & System
-
-| Key          | Action                     |
-| ------------ | -------------------------- |
-| `F`          | Toggle first/third person  |
-| `Arrow Keys` | Zoom in/out (third person) |
-| `P`          | Pause / Resume             |
-| `R`          | Restart (when dead)        |
-| `ESC`        | Quit game                  |
+| Action                  | Key(s)               |
+|-------------------------|----------------------|
+| Move forward / back     | `W` / `S`            |
+| Rotate left / right     | `A` / `D`            |
+| Strafe left / right     | `Q` / `E`            |
+| Sprint                  | `Shift` + move       |
+| Fire                    | `Space`              |
+| Switch weapon           | `1` / `2` / `3`      |
+| Reload                  | `R`                  |
+| Toggle FP / 3P camera   | `F`                  |
+| Zoom (third person)     | `Arrow Keys`         |
+| Pause / Resume          | `P`                  |
+| Restart (after death)   | `R`                  |
+| Quit                    | `ESC`                |
 
 ---
 
-## Installation
+## Installation & Running
 
-### Prerequisites
+> Full step-by-step guide: see **[INSTALL.md](INSTALL.md)**
 
-- Python 3.7+
-- pip
-
-### Setup
+**Quick start:**
 
 ```bash
-git clone https://github.com/fnziad/target_frenzy_3D.git
-cd target_frenzy_3D
+# 1. Clone the repository
+git clone https://github.com/fnziad/last_stand_arena.git
+cd last_stand_arena
+
+# 2. Install the dependency
 pip install -r requirements.txt
-```
 
-### Run
-
-```bash
+# 3. Play
 python run_game.py
 ```
 
----
-
-## Game Flow
-
-1. **Name Entry** — Type your player name and press Enter
-2. **Guidelines** — Review controls, enemies, and power-ups
-3. **Battle** — Survive waves of enemies, collect power-ups, switch weapons
-4. **Level Up** — Kill enough enemies to advance (+20 HP heal per level)
-5. **Zone Shrinks** — After level 2, the zone closes in periodically
-6. **Game Over** — Full stats screen (score, kills, streak, accuracy, time)
-7. **Restart** — Press `R` to play again
+**Requirements:** Python 3.7 or later, PyOpenGL 3.x
 
 ---
 
 ## Project Structure
 
 ```
-target_frenzy_3D/
+last_stand_arena/
 ├── src/
-│   └── target_frenzy_3d.py     # Main game engine (2600+ lines)
-├── run_game.py                  # Launcher with controls banner
-├── requirements.txt             # PyOpenGL dependency
-├── LICENSE                      # MIT License
-├── README.md                    # This file
-├── PROJECT_INFO.txt             # Detailed project info
-└── .gitignore
+│   └── last_stand_arena.py   # Complete game engine (~2,600 lines)
+├── run_game.py               # Launcher with controls reference
+├── requirements.txt          # Single dependency: PyOpenGL
+├── INSTALL.md                # Full installation guide
+├── README.md                 # This file
+├── PROJECT_INFO.txt          # Detailed technical overview
+└── LICENSE                   # MIT License
 ```
 
 ---
 
-## Technical Details
+## Technical Overview
 
-| Aspect            | Details                                                             |
-| ----------------- | ------------------------------------------------------------------- |
-| **Language**      | Python 3                                                            |
-| **Graphics**      | OpenGL 2.x (fixed-function pipeline) via PyOpenGL + GLUT            |
-| **Rendering**     | Custom 3D models from primitives (cubes, spheres, torus, octahedra) |
-| **Physics**       | Momentum-based movement with friction; delta-time scaling           |
-| **AI**            | 4 behavior patterns: chase, zigzag, maintain-distance, direct       |
-| **Collision**     | Distance-based (spherical) and AABB for obstacles                   |
-| **Frame Rate**    | 60 FPS target with sleep-based limiter                              |
-| **Architecture**  | Single-file game engine with modular function design                |
-| **Lines of Code** | ~2,600 lines of Python                                              |
+| Area             | Implementation                                          |
+|------------------|---------------------------------------------------------|
+| Language         | Python 3                                                |
+| Graphics API     | OpenGL 2.x fixed-function via PyOpenGL + GLUT           |
+| 3D Models        | Primitives: cubes, spheres, octahedra, tori, cylinders  |
+| Physics          | Momentum + friction, delta-time scaled, AABB + sphere  |
+| AI               | 4 behaviour trees: chase, zigzag, range-hold, direct   |
+| Frame rate       | 60 FPS target with sleep-based limiter                  |
+| Architecture     | Single-file engine, modular functions, state machine   |
 
 ---
 
@@ -211,10 +158,8 @@ target_frenzy_3D/
 
 **Fahad Nadim Ziad** — [@fnziad](https://github.com/fnziad)
 
-Made with Python & OpenGL — 2026
-
 ---
 
 ## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for full text.

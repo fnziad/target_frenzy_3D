@@ -1,278 +1,160 @@
 ================================================================================
-                    TARGET FRENZY 3D — BATTLE ROYALE EDITION
-                         Project Information Document
+  LAST STAND ARENA — PROJECT INFORMATION
+  A 3D Battle Royale Shooter in Python / OpenGL
 ================================================================================
 
-PROJECT TITLE:      Target Frenzy 3D — Battle Royale Edition
-AUTHOR:             Fahad Nadim Ziad
-YEAR:               2026
-LICENSE:            MIT License
-REPOSITORY:         https://github.com/fnziad/target_frenzy_3D
-LANGUAGE:           Python 3
-FRAMEWORK:          OpenGL (PyOpenGL + GLUT)
-LINES OF CODE:      ~2,600+
-CATEGORY:           Game Development / Computer Graphics / Interactive 3D
+Author      : Fahad Nadim Ziad
+Year        : 2026
+License     : MIT
+Repository  : https://github.com/fnziad/target_frenzy_3D
 
-================================================================================
-  PROJECT OVERVIEW
-================================================================================
+--------------------------------------------------------------------------------
+  OVERVIEW
+--------------------------------------------------------------------------------
 
-Target Frenzy 3D is a complete, playable 3D battle royale arena shooter game
-built entirely from scratch in Python using OpenGL for real-time 3D rendering.
-The game demonstrates proficiency in real-time graphics programming, game
-engine architecture, AI systems, physics simulation, and interactive design
-— all within a single self-contained Python file.
+Last Stand Arena is a fully playable first/third-person 3D battle royale shooter
+built entirely from scratch in Python using raw OpenGL fixed-function pipeline
+calls. No game engine, no physics library, no scene graph — every triangle,
+every lighting calculation, and every collision is hand-written.
 
-The player is placed in a massive arena and must survive waves of intelligent
-enemies that shoot back, while the battle royale zone shrinks over time. The
-game features a multi-weapon system, power-ups with unique 3D visualizations,
-headshot mechanics, combo scoring, kill streaks, and a fully featured HUD with
-minimap.
+The project started as a university class assignment and grew into a complete
+game with a weapon system, enemy AI, power-ups, UI overlays, and an FPS limiter.
 
-================================================================================
+--------------------------------------------------------------------------------
   TECHNICAL SKILLS DEMONSTRATED
-================================================================================
+--------------------------------------------------------------------------------
 
-1. REAL-TIME 3D GRAPHICS (OpenGL)
-   - Fixed-function OpenGL pipeline (GL_LIGHTING, GL_FOG, GL_BLEND)
-   - Custom 3D models built from primitives (glutSolidCube, gluSphere,
-     glutSolidOctahedron, glutSolidTorus, gluNewQuadric)
-   - Perspective projection with gluPerspective and gluLookAt
-   - First-person overlay rendering (clearing depth buffer for FP gun)
-   - 2D HUD overlay using orthographic projection
-   - Particle effects system with physics
-   - Translucent rendering with alpha blending
-   - Per-vertex coloring with GL_COLOR_MATERIAL
-   - Ambient/diffuse/specular lighting setup
-   - Atmospheric fog for depth perception
-   - Smooth shading (GL_SMOOTH)
+Graphics & Rendering
+  - OpenGL fixed-function pipeline (glBegin/glEnd, display lists, fog, blending)
+  - 3D scene construction: cylinders, spheres, cones, tori via GLUT primitives
+  - Custom first-person weapon models (distinct pistol / AR / shotgun meshes)
+  - 3D power-up shapes: cross, diamond, spinning star, dome
+  - Muzzle flash effect using additive blending (GL_ONE)
+  - HUD / 2D overlay rendering with orthographic projection
+  - Floating damage numbers and hit markers
+  - Minimap with enemy blips
 
-2. GAME ENGINE ARCHITECTURE
-   - Complete game loop: input → update → render
-   - Delta-time based updates for frame-rate independence
-   - 60 FPS frame limiter for consistent performance
-   - State machine for game flow (Name Entry → Guidelines → Playing →
-     Paused → Game Over)
-   - Modular function design (~60+ functions organized by system)
-   - Global state management with careful scoping
+Camera System
+  - Dual camera modes: first-person (FPS) and third-person orbital
+  - Smooth camera lag with lerp interpolation
+  - Mouse-based yaw and pitch with gimbal-lock avoidance
+  - Arrow-key zoom in third-person mode
 
-3. GAME PHYSICS
-   - Momentum-based player movement with friction
-   - Delta-time scaling for consistent physics across frame rates
-   - AABB collision detection for crate obstacles
-   - Spherical collision for pillar obstacles and projectiles
-   - Axis-sliding for wall collision response
-   - Push-out resolution when stuck inside obstacles
-   - Diagonal movement normalization
+Game Architecture
+  - Single-file Python game engine (~2700 lines)
+  - Entity-component style dictionaries for enemies, bullets, power-ups
+  - Wave-based enemy spawning with difficulty scaling
+  - Collision detection: AABB sphere vs sphere, bullet-enemy overlap
+  - Zone-aware hit detection: headshots, body shots, leg shots
+  - Accurate per-weapon damage/accuracy/fire-rate/reload model
 
-4. ARTIFICIAL INTELLIGENCE (4 ENEMY TYPES)
-   - Grunt: Direct chase behavior with moderate shooting
-   - Tank: Slow advance with heavy damage and high HP
-   - Scout: Zigzag dodging with fast movement and direction changes
-   - Sniper: Range maintenance (retreats if too close, advances if too far)
-   - All enemies: Shoot at player with type-specific accuracy/spread
-   - Dynamic difficulty scaling (+12% HP per level)
-   - Fire rate randomization for natural feel
+Weapon System
+  - Three weapons: Pistol, Assault Rifle, Shotgun
+  - Each weapon has: damage, fire rate, pellet count, ammo pool, reload time
+  - Accuracy tracks total shots vs hits at pellet granularity (shotgun fix)
+  - Headshot detection uses height zones + 25% probability gate
 
-5. WEAPON SYSTEM
-   - 3 distinct weapons: Pistol, Assault Rifle, Shotgun
-   - Each weapon has unique: damage, fire rate, spread, ammo capacity,
-     reload time, projectile count (pellets), visual color
-   - Real-time weapon switching with 1/2/3 keys
-   - Reload mechanic with timer and auto-reload on empty
-   - Ammo management with kill-based replenishment
-   - Unique first-person weapon models per weapon type:
-     * Pistol: Compact slide/frame/grip model
-     * Assault Rifle: Full receiver/barrel/magazine/sights
-     * Shotgun: Long barrel, tube magazine, pump grip, stock
-   - Weapon-specific projectile rendering:
-     * Pistol: Elongated bullet shape
-     * Assault Rifle: Tracer with glow effect
-     * Shotgun: Small sphere pellets
+Enemy AI
+  - Line-of-sight patrol → chase → attack state machine
+  - Health bars rendered as 3D billboard quads
+  - Multiple enemy types with different speed/health/armor
 
-6. COMBAT MECHANICS
-   - Headshot detection system based on projectile height vs enemy zones
-   - Probability-based headshot confirmation (25% in head zone)
-   - Hit marker system: white X for body, red X for headshots
-   - Floating damage numbers with upward drift animation
-   - Kill confirmation floating text (+points)
-   - Muzzle flash overlay effect
-   - Enemy-to-player melee damage on close range
-   - Shield absorption mechanic (damage → shield first → HP)
+Power-Ups
+  - Four types: Health, Ammo, Speed boost, Shield
+  - Distinct 3D shapes per type; animated rotation
+  - Collected on proximity
 
-7. SCORING & PROGRESSION
-   - Combo system: chain kills within 3s for up to 5× multiplier
-   - Kill streak tracking with milestone bonuses:
-     * 5 kills: "RAMPAGE!" (+50)
-     * 10 kills: "UNSTOPPABLE!" (+100)
-     * 15 kills: "GODLIKE!" (+200)
-   - Headshot score bonus (1.5× points)
-   - Level/wave system: 10+ kills per level to advance
-   - Increasing enemy count and variety per level
-   - Post-game statistics: score, level, kills, streaks, combo,
-     time survived, accuracy percentage
+UI / UX
+  - Bitmap font rendering for HUD text (glutBitmapCharacter)
+  - Kill feed, crosshair, ammo counter, health/shield bars
+  - Name entry screen, main menu, game over / victory screens
+  - FPS limiter (GLUT idle callback with sleep)
+  - Pause / resume with overlay
 
-8. POWER-UP SYSTEM WITH 3D VISUALIZATION
-   - 4 power-up types with distinct 3D shapes:
-     * Health: Green 3D cross/plus shape
-     * Speed: Blue spinning octahedron with speed lines
-     * Damage: Red spiky star (sphere with spike octahedra)
-     * Shield: Yellow translucent dome with rotating torus ring
-   - Pulsing glow rings underneath each power-up
-   - Bobbing and spinning animations
-   - Timed spawning system
-   - Collection with particle effects
+Input Handling
+  - GLUT keyboard callbacks (normal + special keys)
+  - Sprint modifier (Shift), weapon switch (1/2/3)
+  - Passive mouse motion for camera yaw/pitch
 
-9. BATTLE ROYALE ZONE
-   - Shrinking zone circle with configurable intervals
-   - Zone damage to players and enemies outside boundary
-   - Translucent zone wall visualization
-   - Dynamic zone center shifting
-   - HUD warning notifications
-   - Minimap visualization of zone and target zone
+--------------------------------------------------------------------------------
+  PROJECT STRUCTURE
+--------------------------------------------------------------------------------
 
-10. HUD & UI SYSTEM
-    - Health bar with color-coded thresholds (green → yellow → red)
-    - Shield bar (appears when active)
-    - Stamina bar for sprint management
-    - Score display with combo multiplier
-    - Level and kill progress tracker
-    - Player name display
-    - Active power-up timers
-    - Kill streak labels
-    - Weapon indicator: name, ammo bar, slot selector [1][2][3]
-    - Reload progress indicator
-    - First-person crosshair with dynamic hit markers
-    - Minimap showing: player, enemies, power-ups, obstacles, zone
-    - Damage flash overlay (red screen flash)
-    - Level-up splash notification
-    - Floating notification system (right side)
-    - Zone shrinking warning
+BattleRoyale/
+├── src/
+│   └── last_stand_arena.py     — Main game engine (all game logic + rendering)
+├── run_game.py                 — Launcher with controls banner
+├── requirements.txt            — PyOpenGL dependency
+├── README.md                   — Full project documentation
+├── INSTALL.md                  — Platform installation guide
+├── LICENSE                     — MIT License
+└── PROJECT_INFO.txt            — This file (portfolio overview)
 
-11. CAMERA SYSTEM
-    - First-person view: eye at head height, looking in facing direction
-    - Third-person view: camera behind/above player, same look direction
-    - Smooth camera following
-    - Configurable zoom (distance/height) via arrow keys
-    - Gun model overlay in first-person (depth-cleared)
+--------------------------------------------------------------------------------
+  DEPENDENCIES
+--------------------------------------------------------------------------------
 
-12. INPUT HANDLING
-    - Full keyboard controls (WASD + QE movement)
-    - Smooth rotation with momentum interpolation
-    - Sprint toggle with Shift held
-    - Key-up detection for smooth movement stops
-    - State-aware input (different behavior per game state)
-    - Name entry text input with backspace support
-    - Special key handling (arrows) for camera zoom
+  Python       3.7+           (tested on 3.10, 3.14)
+  PyOpenGL     3.1.7          pip install PyOpenGL
+  GLUT         System-level   macOS built-in; freeglut on Linux/Windows
 
-================================================================================
-  PROJECT ARCHITECTURE
-================================================================================
+  No game engine used. No physics library. No GUI framework.
 
-File Structure:
-  target_frenzy_3D/
-  ├── src/
-  │   └── target_frenzy_3d.py    # Complete game engine (~2,600 lines)
-  ├── run_game.py                 # Launcher script with ASCII banner
-  ├── requirements.txt            # PyOpenGL dependency
-  ├── LICENSE                     # MIT License
-  ├── README.md                   # Professional documentation
-  ├── PROJECT_INFO.txt            # This file
-  └── .gitignore                  # Git ignore rules
+--------------------------------------------------------------------------------
+  DESIGN DECISIONS
+--------------------------------------------------------------------------------
 
-Code Organization (within target_frenzy_3d.py):
-  - Lines   1-30:   Module docstring and imports
-  - Lines  32-210:  Configuration constants and global state
-  - Lines 212-310:  Utility functions (2D rendering, damage, collision)
-  - Lines 312-500:  HUD rendering (bars, score, crosshair, weapon UI)
-  - Lines 500-560:  Minimap rendering
-  - Lines 560-790:  Game screens (name entry, guidelines, game over, pause)
-  - Lines 790-850:  Arena rendering (grass terrain)
-  - Lines 850-900:  Obstacle rendering (crates, pillars)
-  - Lines 900-950:  Zone rendering (circle, wall)
-  - Lines 950-1110: Player model (tactical soldier)
-  - Lines 1110-1240: Enemy rendering (4 types)
-  - Lines 1240-1340: Power-up 3D rendering (4 distinct shapes)
-  - Lines 1340-1430: Projectile rendering (3 weapon types)
-  - Lines 1430-1580: First-person gun model (3 distinct weapons)
-  - Lines 1580-1700: Game logic (weapon firing, reloading, switching)
-  - Lines 1700-1800: Player update (movement, physics, collisions)
-  - Lines 1800-1900: Enemy AI update (movement, shooting, zone damage)
-  - Lines 1900-2020: Projectile updates and hit detection
-  - Lines 2020-2120: Zone, power-up, combo, particle updates
-  - Lines 2120-2250: Level system, game init, reset
-  - Lines 2250-2400: Input handlers (keyboard, special keys)
-  - Lines 2400-2500: Camera setup (FP/3P)
-  - Lines 2500-2600: Game loop, rendering, OpenGL init, main
+1. Single-file architecture
+   Keeps the project portable and easy to submit / share.
+   All rendering, logic, input, and AI in one file following a clear class
+   hierarchy: Engine → Scene → Entities → Renderer → HUD.
+
+2. Fixed-function OpenGL (not shaders)
+   Deliberately avoids GLSL to demonstrate understanding of the underlying
+   transformation pipeline (modelview stack, normal vectors, material properties,
+   lighting equations) without shader abstraction.
+
+3. Python + GLUT over Pygame/Panda3D
+   Maximises control over the render loop and demonstrates low-level API
+   usage relevant to graphics programming coursework.
+
+4. Per-pellet accuracy tracking
+   Shotgun fires multiple pellets per shot; naive "+1 per shot" inflated
+   accuracy to 100%. Fixed by accumulating pellet count in total_shots_fired.
+
+5. Layered headshot logic
+   Height-zone detection first (only the top ~25% of enemy height qualifies),
+   then a 25% probability gate — prevents guaranteed headshots while still
+   rewarding aimed shots.
+
+--------------------------------------------------------------------------------
+  GAMEPLAY SUMMARY
+--------------------------------------------------------------------------------
+
+  Gamemode     : Wave-based survival (battle royale style)
+  Perspective  : First-person (default) or third-person (toggle with F)
+  Weapons      : Pistol, Assault Rifle, Shotgun (switch with 1/2/3)
+  Enemies      : Multiple types, increasing waves
+  Power-ups    : Health, Ammo, Speed, Shield
+  Win Condition: Survive all waves
+  Lose Condition: Health reaches zero
+
+--------------------------------------------------------------------------------
+  CONTROLS
+--------------------------------------------------------------------------------
+
+  W / S          Move forward / backward
+  A / D          Rotate left / right
+  Q / E          Strafe left / right
+  Shift          Sprint
+  Space          Fire
+  1 / 2 / 3      Switch weapon
+  R              Reload
+  F              Toggle first / third person
+  Arrow Keys     Camera zoom (third-person)
+  P              Pause
+  ESC            Quit
 
 ================================================================================
-  DEVELOPMENT ENVIRONMENT
-================================================================================
-
-Platform:           macOS (Apple Silicon)
-Python Version:     3.14+
-Dependencies:       PyOpenGL 3.1.7
-IDE:                VS Code
-Version Control:    Git / GitHub
-Total Development:  Solo project
-
-================================================================================
-  KEY DESIGN DECISIONS
-================================================================================
-
-1. Single-file architecture: Keeps the entire game engine self-contained for
-   portability and easy distribution. No external assets needed.
-
-2. OpenGL fixed-function pipeline: Demonstrates understanding of core graphics
-   concepts (transformations, lighting, blending) without shader abstraction.
-
-3. Procedural 3D models: All models (player, enemies, weapons, power-ups) are
-   built from OpenGL primitives, showing geometric composition skills.
-
-4. Delta-time physics: All movement and animations use delta-time scaling for
-   consistent behavior regardless of frame rate.
-
-5. FPS limiter: Prevents excessive CPU usage while maintaining smooth gameplay
-   at 60 FPS.
-
-6. State machine for game flow: Clean separation of game states (menu, playing,
-   paused, game over) with state-specific input handling.
-
-================================================================================
-  PORTFOLIO HIGHLIGHTS
-================================================================================
-
-• Complete playable game with polished UX (name entry, guidelines, stats)
-• 2,600+ lines of well-organized Python code
-• Real-time 3D rendering with OpenGL
-• 4 enemy AI behaviors with progressive difficulty
-• Multi-weapon system with distinct models, projectiles, and mechanics
-• Combat feedback: headshots, hit markers, floating damage numbers
-• Battle royale zone mechanic with visual indicators
-• Combo and kill streak scoring systems
-• Power-up system with unique 3D visualized models
-• Full HUD with minimap, weapon UI, health/shield/stamina bars
-• First-person and third-person camera systems
-• Momentum-based physics with collision detection
-• Frame-rate independent game loop
-
-================================================================================
-  HOW TO RUN
-================================================================================
-
-Prerequisites:
-  - Python 3.7+
-  - pip install PyOpenGL PyOpenGL_accelerate
-
-Quick Start:
-  git clone https://github.com/fnziad/target_frenzy_3D.git
-  cd target_frenzy_3D
-  pip install -r requirements.txt
-  python run_game.py
-
-================================================================================
-
-  (c) 2026 Fahad Nadim Ziad — All rights reserved under MIT License
-  GitHub: https://github.com/fnziad/target_frenzy_3D
-
+  END OF PROJECT INFO
 ================================================================================
