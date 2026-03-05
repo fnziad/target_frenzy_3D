@@ -78,7 +78,7 @@ p_hp = 100
 p_max_hp = 100
 p_score = 0
 p_mom = [0, 0, 0]
-p_fric = 0.3
+p_fric = 0.12
 p_shield = 0
 p_shield_max = 50
 p_damage_mult = 1.0
@@ -96,6 +96,7 @@ p_sprinting = False
 # Input
 keys = {b'w': False, b's': False, b'a': False, b'd': False, b'q': False, b'e': False}
 shift_held = False
+p_rot_velocity = 0  # Smooth rotation momentum
 
 # ============================================================
 # WEAPON
@@ -1238,7 +1239,7 @@ def enemy_fire(enemy):
 
 def update_player():
     """Update player movement, sprint, stamina, and power-up timers"""
-    global p_pos, p_dir, p_mom, p_sprinting, p_stamina
+    global p_pos, p_dir, p_mom, p_sprinting, p_stamina, p_rot_velocity
     global p_speed_boost_timer, p_damage_boost_timer, p_shield_timer
     global p_damage_mult, p_shield
 
@@ -1272,12 +1273,16 @@ def update_player():
         if p_shield_timer <= 0:
             p_shield = 0
 
-    # Rotation (A/D keys)
-    rot_speed = 4.0 * delta_time * 60
+    # Rotation (A/D keys) - smooth with momentum
+    rot_target = 0
+    rot_max = 3.0  # degrees per frame at 60fps
     if keys[b'a']:
-        p_dir += rot_speed
+        rot_target += rot_max
     if keys[b'd']:
-        p_dir -= rot_speed
+        rot_target -= rot_max
+    # Smoothly interpolate rotation velocity
+    p_rot_velocity = p_rot_velocity * 0.75 + rot_target * 0.25
+    p_dir += p_rot_velocity * delta_time * 60
     p_dir %= 360
 
     # Movement (W/S forward/back, Q/E strafe) - delta-time scaled
