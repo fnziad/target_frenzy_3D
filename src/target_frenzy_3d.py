@@ -96,6 +96,12 @@ p_sprinting = False
 keys = {b'w': False, b's': False, b'a': False, b'd': False}
 shift_held = False
 
+# Mouse look
+mouse_sens = 0.15
+mouse_center_x = 0
+mouse_center_y = 0
+mouse_warping = False
+
 # ============================================================
 # WEAPON
 # ============================================================
@@ -286,6 +292,7 @@ def take_damage(amount):
     if p_hp <= 0:
         p_hp = 0
         game_state = STATE_GAME_OVER
+        glutSetCursor(GLUT_CURSOR_INHERIT)
         add_notification("YOU DIED!", color=(1, 0, 0), duration=5.0)
 
 
@@ -314,20 +321,20 @@ def draw_hud():
     begin_2d()
 
     # Health bar
-    draw_text_2d(10, WIN_H - 25, "HP", GLUT_BITMAP_HELVETICA_12, (1, 1, 1))
+    draw_text_2d(10, WIN_H - 30, "HP", GLUT_BITMAP_HELVETICA_18, (1, 1, 1))
     hp_color = (0.1, 0.9, 0.1) if p_hp > 50 else (1, 1, 0) if p_hp > 25 else (1, 0.1, 0.1)
-    draw_bar(30, WIN_H - 30, 200, 18, p_hp, p_max_hp, (0.2, 0, 0), hp_color)
-    draw_text_2d(95, WIN_H - 26, f"{int(p_hp)}/{p_max_hp}", GLUT_BITMAP_HELVETICA_12, (1, 1, 1))
+    draw_bar(40, WIN_H - 35, 220, 22, p_hp, p_max_hp, (0.2, 0, 0), hp_color)
+    draw_text_2d(120, WIN_H - 30, f"{int(p_hp)}/{p_max_hp}", GLUT_BITMAP_HELVETICA_12, (1, 1, 1))
 
     # Shield bar
     if p_shield > 0 or p_shield_timer > 0:
-        draw_text_2d(10, WIN_H - 50, "SH", GLUT_BITMAP_HELVETICA_12, (1, 1, 0.5))
-        draw_bar(30, WIN_H - 55, 200, 14, p_shield, p_shield_max, (0.15, 0.15, 0), (0.8, 0.8, 0.1))
+        draw_text_2d(10, WIN_H - 60, "SH", GLUT_BITMAP_HELVETICA_12, (1, 1, 0.5))
+        draw_bar(40, WIN_H - 65, 220, 16, p_shield, p_shield_max, (0.15, 0.15, 0), (0.8, 0.8, 0.1))
 
     # Stamina bar
-    draw_text_2d(10, WIN_H - 72, "ST", GLUT_BITMAP_HELVETICA_12, (0.5, 0.8, 1))
+    draw_text_2d(10, WIN_H - 82, "ST", GLUT_BITMAP_HELVETICA_12, (0.5, 0.8, 1))
     stam_color = (0.1, 0.5, 1.0) if p_stamina > 30 else (0.8, 0.3, 0.1)
-    draw_bar(30, WIN_H - 77, 200, 14, p_stamina, p_max_stamina, (0, 0, 0.15), stam_color)
+    draw_bar(40, WIN_H - 87, 220, 16, p_stamina, p_max_stamina, (0, 0, 0.15), stam_color)
 
     # Score and combo (top right)
     score_text = f"Score: {p_score}"
@@ -344,10 +351,10 @@ def draw_hud():
     draw_text_2d(WIN_W // 2 - 50, WIN_H - 48, kills_text, GLUT_BITMAP_HELVETICA_12, (0.8, 0.8, 0.8))
 
     # Player name
-    draw_text_2d(10, WIN_H - 95, player_name, GLUT_BITMAP_HELVETICA_12, (0.7, 0.7, 1.0))
+    draw_text_2d(10, WIN_H - 108, player_name, GLUT_BITMAP_HELVETICA_12, (0.7, 0.7, 1.0))
 
     # Active power-up indicators
-    pu_y = WIN_H - 115
+    pu_y = WIN_H - 130
     if p_speed_boost_timer > 0:
         draw_text_2d(10, pu_y, f"SPD BOOST {p_speed_boost_timer:.1f}s", GLUT_BITMAP_HELVETICA_12, (0.1, 0.5, 1))
         pu_y -= 18
@@ -378,7 +385,7 @@ def draw_hud():
                          GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.2, 0.2))
 
     # View mode
-    view_text = "[FP] Right-click to switch" if fp_view else "[3P] Right-click for FP | Arrows: camera"
+    view_text = "[FP] Mouse: Aim | Right-click: 3P" if fp_view else "[3P] Mouse: Aim | Right-click: FP | Arrows: camera"
     draw_text_2d(10, 15, view_text, GLUT_BITMAP_HELVETICA_12, (0.6, 0.6, 0.6))
 
     # Sprint hint
@@ -403,17 +410,31 @@ def draw_hud():
     # Crosshair (first person)
     if fp_view:
         cx, cy = WIN_W // 2, WIN_H // 2
-        glColor3f(1, 1, 1)
+        # Outer lines (dark outline)
+        glColor3f(0, 0, 0)
+        glLineWidth(3)
         glBegin(GL_LINES)
-        glVertex2f(cx - 15, cy)
-        glVertex2f(cx - 5, cy)
-        glVertex2f(cx + 5, cy)
-        glVertex2f(cx + 15, cy)
-        glVertex2f(cx, cy - 15)
-        glVertex2f(cx, cy - 5)
-        glVertex2f(cx, cy + 5)
-        glVertex2f(cx, cy + 15)
+        glVertex2f(cx - 16, cy); glVertex2f(cx - 4, cy)
+        glVertex2f(cx + 4, cy); glVertex2f(cx + 16, cy)
+        glVertex2f(cx, cy - 16); glVertex2f(cx, cy - 4)
+        glVertex2f(cx, cy + 4); glVertex2f(cx, cy + 16)
         glEnd()
+        # Inner lines (bright green)
+        glColor3f(0.2, 1.0, 0.2)
+        glLineWidth(1.5)
+        glBegin(GL_LINES)
+        glVertex2f(cx - 15, cy); glVertex2f(cx - 5, cy)
+        glVertex2f(cx + 5, cy); glVertex2f(cx + 15, cy)
+        glVertex2f(cx, cy - 15); glVertex2f(cx, cy - 5)
+        glVertex2f(cx, cy + 5); glVertex2f(cx, cy + 15)
+        glEnd()
+        # Center dot
+        glPointSize(3)
+        glBegin(GL_POINTS)
+        glVertex2f(cx, cy)
+        glEnd()
+        glPointSize(1)
+        glLineWidth(1)
 
     # Minimap
     draw_minimap()
@@ -568,7 +589,9 @@ def draw_guidelines():
     draw_text_2d(cx - 80, y, "=== CONTROLS ===", GLUT_BITMAP_HELVETICA_18, (0.5, 0.8, 1))
     y -= 30
     controls = [
-        ("W / A / S / D", "Move / Strafe"),
+        ("W / S", "Move forward / backward"),
+        ("A / D", "Strafe left / right"),
+        ("Mouse", "Look / Aim"),
         ("Shift + Move", "Sprint (uses stamina)"),
         ("Left Click / Space", "Fire weapon"),
         ("Right Click / F", "Toggle first-person view"),
@@ -1255,14 +1278,9 @@ def update_player():
         if p_shield_timer <= 0:
             p_shield = 0
 
-    # Rotation
-    if keys[b'a']:
-        p_dir += p_rot
-    if keys[b'd']:
-        p_dir -= p_rot
     p_dir %= 360
 
-    # Movement
+    # Movement (WASD with strafe)
     ang = math.radians(p_dir - 90)
     move_x = move_y = 0
     if keys[b'w']:
@@ -1271,6 +1289,12 @@ def update_player():
     if keys[b's']:
         move_x -= current_speed * math.cos(ang)
         move_y -= current_speed * math.sin(ang)
+    if keys[b'a']:
+        move_x += current_speed * math.cos(ang + math.pi / 2)
+        move_y += current_speed * math.sin(ang + math.pi / 2)
+    if keys[b'd']:
+        move_x += current_speed * math.cos(ang - math.pi / 2)
+        move_y += current_speed * math.sin(ang - math.pi / 2)
 
     final_x = p_pos[0] + move_x
     final_y = p_pos[1] + move_y
@@ -1580,7 +1604,7 @@ def update_pulse():
 
 def check_level_up():
     """Check if player has enough kills to advance to next level"""
-    global current_level, kills_this_level, kills_to_advance, level_up_display
+    global current_level, kills_this_level, kills_to_advance, level_up_display, p_hp
 
     if kills_this_level >= kills_to_advance:
         current_level += 1
@@ -1590,7 +1614,6 @@ def check_level_up():
 
         # Heal on level up
         p_hp_restore = min(20, p_max_hp - p_hp)
-        global p_hp
         p_hp = min(p_hp + 20, p_max_hp)
 
         # Clear remaining enemies and spawn new wave
@@ -1618,6 +1641,10 @@ def init_game():
     p_pos = [0, 0, 0]
     p_dir = 0
     p_mom = [0, 0, 0]
+
+    # Hide cursor for mouse look
+    glutSetCursor(GLUT_CURSOR_NONE)
+    glutWarpPointer(mouse_center_x, mouse_center_y)
     p_hp = p_max_hp
     p_score = 0
     p_shield = 0
@@ -1680,7 +1707,7 @@ def reset_game():
 
 def keyboardListener(key, x, y):
     """Handle keyboard key press events"""
-    global keys, game_state, player_name, shift_held, fp_view, p_rot
+    global keys, game_state, player_name, shift_held, fp_view
 
     # Update shift state
     mods = glutGetModifiers()
@@ -1721,6 +1748,8 @@ def keyboardListener(key, x, y):
     if game_state == STATE_PAUSED:
         if key_lower == b'p':
             game_state = STATE_PLAYING
+            glutSetCursor(GLUT_CURSOR_NONE)
+            glutWarpPointer(mouse_center_x, mouse_center_y)
         return
 
     # Playing
@@ -1729,9 +1758,9 @@ def keyboardListener(key, x, y):
             keys[key_lower] = True
         if key_lower == b'p':
             game_state = STATE_PAUSED
+            glutSetCursor(GLUT_CURSOR_INHERIT)
         elif key_lower == b'f':
             fp_view = not fp_view
-            p_rot = 3 if fp_view else 5
         elif key == b' ':
             fire_weapon()
 
@@ -1768,16 +1797,32 @@ def specialKeyListener(key, x, y):
         cam_ang += 5
 
 
+def passiveMotionListener(x, y):
+    """Handle mouse movement for look/aim"""
+    global p_dir, mouse_warping
+
+    if game_state != STATE_PLAYING:
+        return
+    if mouse_warping:
+        mouse_warping = False
+        return
+
+    dx = x - mouse_center_x
+    p_dir = (p_dir - dx * mouse_sens) % 360
+
+    mouse_warping = True
+    glutWarpPointer(mouse_center_x, mouse_center_y)
+
+
 def mouseListener(button, state, x, y):
     """Handle mouse button events"""
-    global fp_view, p_rot
+    global fp_view
     if game_state != STATE_PLAYING:
         return
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         fire_weapon()
     elif button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
         fp_view = not fp_view
-        p_rot = 3 if fp_view else 5
 
 
 # ============================================================
@@ -1911,7 +1956,7 @@ def init_graphics():
 
 def main():
     """Initialize OpenGL and start the game"""
-    global WIN_W, WIN_H, last_time
+    global WIN_W, WIN_H, last_time, mouse_center_x, mouse_center_y
 
     glutInit()
     WIN_W = glutGet(GLUT_SCREEN_WIDTH)
@@ -1925,12 +1970,17 @@ def main():
     init_graphics()
     last_time = time.time()
 
+    mouse_center_x = WIN_W // 2
+    mouse_center_y = WIN_H // 2
+
     glutDisplayFunc(showScreen)
     glutIdleFunc(idle)
     glutKeyboardFunc(keyboardListener)
     glutKeyboardUpFunc(keyboardUpListener)
     glutSpecialFunc(specialKeyListener)
     glutMouseFunc(mouseListener)
+    glutPassiveMotionFunc(passiveMotionListener)
+    glutMotionFunc(passiveMotionListener)
     glutMainLoop()
 
 
