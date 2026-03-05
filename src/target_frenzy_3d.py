@@ -1865,22 +1865,18 @@ def setupCamera():
         cen_z = eye_z
         gluLookAt(eye_x, eye_y, eye_z, cen_x, cen_y, cen_z, 0, 0, 1)
     else:
-        # Smoothly track player facing direction + manual offset
-        target_ang = (p_dir - 90 + cam_offset) % 360
-        # Smooth interpolation for camera angle
-        diff = target_ang - cam_ang
-        if diff > 180:
-            diff -= 360
-        elif diff < -180:
-            diff += 360
-        cam_ang += diff * 0.08  # Smooth follow speed
-        cam_ang %= 360
+        # Camera locked behind player (proper 3rd person)
+        cam_ang = (p_dir - 90 + cam_offset) % 360
 
         ang_r = math.radians(cam_ang)
         x = p_pos[0] + cam_dist * math.sin(ang_r)
         y = p_pos[1] + cam_dist * math.cos(ang_r)
         z = p_pos[2] + cam_h
-        gluLookAt(x, y, z, p_pos[0], p_pos[1], p_pos[2] + 50, 0, 0, 1)
+        # Look slightly ahead of player in their facing direction
+        fwd_r = math.radians(p_dir - 90)
+        look_x = p_pos[0] - math.sin(fwd_r) * 80
+        look_y = p_pos[1] - math.cos(fwd_r) * 80
+        gluLookAt(x, y, z, look_x, look_y, p_pos[2] + 50, 0, 0, 1)
 
 
 def update_time():
