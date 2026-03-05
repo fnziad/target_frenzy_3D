@@ -101,14 +101,31 @@ shift_held = False
 p_rot_velocity = 0  # Smooth rotation momentum
 
 # ============================================================
-# WEAPON
+# WEAPON SYSTEM
 # ============================================================
+weapons = {
+    'pistol': {
+        'name': 'Pistol', 'damage': 12, 'fire_rate': 0.35, 'spread': 0.8,
+        'shot_speed': 28, 'shot_size': 5, 'ammo': 50, 'max_ammo': 50,
+        'color': (1.0, 0.85, 0.2), 'pellets': 1, 'reload_time': 1.2,
+    },
+    'assault_rifle': {
+        'name': 'Assault Rifle', 'damage': 10, 'fire_rate': 0.12, 'spread': 1.2,
+        'shot_speed': 32, 'shot_size': 6, 'ammo': 120, 'max_ammo': 120,
+        'color': (1.0, 0.6, 0.0), 'pellets': 1, 'reload_time': 2.0,
+    },
+    'shotgun': {
+        'name': 'Shotgun', 'damage': 8, 'fire_rate': 0.8, 'spread': 6.0,
+        'shot_speed': 24, 'shot_size': 4, 'ammo': 24, 'max_ammo': 24,
+        'color': (1.0, 0.3, 0.1), 'pellets': 6, 'reload_time': 2.5,
+    },
+}
+weapon_order = ['pistol', 'assault_rifle', 'shotgun']
+current_weapon = 'assault_rifle'
 shots = []
-shot_size = 8
-shot_spd = 30
 gun_pos = [30, 15, 80]
 fire_cooldown = 0
-fire_rate = 0.15
+reload_timer = 0
 
 # ============================================================
 # ENEMIES
@@ -191,6 +208,15 @@ game_time = 0
 last_time = 0
 delta_time = 0
 
+# Hit markers and floating damage text
+hit_markers = []  # [{timer, color}]
+floating_texts = []  # [{text, x, y, vy, timer, color}]
+muzzle_flash_timer = 0
+
+# Frame rate target
+TARGET_FPS = 60
+frame_sleep_time = 1.0 / TARGET_FPS
+
 
 # ============================================================
 # UTILITY FUNCTIONS
@@ -263,6 +289,16 @@ def draw_bar(x, y, w, h, current, maximum, bg_color, fill_color, border=True):
 def add_notification(text, color=(1, 1, 1), duration=3.0):
     """Add a floating notification message"""
     notifications.append({'text': text, 'timer': duration, 'color': color})
+
+
+def draw_floating_texts_2d():
+    """Draw floating damage/score numbers on screen (called inside HUD 2D context)"""
+    for ft in floating_texts:
+        if ft['timer'] > 0.1:
+            alpha_fade = min(ft['timer'] * 2, 1.0)
+            c = ft['color']
+            fade_color = (c[0] * alpha_fade, c[1] * alpha_fade, c[2] * alpha_fade)
+            draw_text_2d(ft['x'], ft['y'], ft['text'], GLUT_BITMAP_HELVETICA_18, fade_color)
 
 
 def spawn_particles(pos, color, count=10):
@@ -382,12 +418,29 @@ def draw_hud():
                          GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.2, 0.2))
 
     # View mode
-    view_text = "[FP] A/D: Rotate | Q/E: Strafe | ESC: Quit" if fp_view else "[3P] A/D: Rotate | Q/E: Strafe | ESC: Quit"
+    view_text = "[FP] A/D:Rotate Q/E:Strafe 1/2/3:Weapon R:Reload ESC:Quit" if fp_view else "[3P] A/D:Rotate Q/E:Strafe 1/2/3:Weapon R:Reload ESC:Quit"
     draw_text_2d(10, 15, view_text, GLUT_BITMAP_HELVETICA_12, (0.3, 0.3, 0.4))
 
     # Sprint hint
     if p_sprinting:
         draw_text_2d(10, 35, "SPRINTING", GLUT_BITMAP_HELVETICA_12, (0.3, 0.7, 1))
+
+    # Weapon indicator (bottom center)
+    w = weapons[current_weapon]
+    weap_name = w['name']
+    ammo_text = f"{w['ammo']}/{w['max_ammo']}"
+    weap_x = WIN_W // 2 - 80
+    weap_y = 55
+    draw_text_2d(weap_x, weap_y + 20, weap_name, GLUT_BITMAP_HELVETICA_18, (0.15, 0.15, 0.25))
+    ammo_color = (0.15, 0.15, 0.25) if w['ammo'] > w['max_ammo'] * 0.25 else (0.9, 0.15, 0.15)
+    draw_text_2d(weap_x + 130, weap_y + 20, ammo_text, GLUT_BITMAP_HELVETICA_18, ammo_color)
+    draw_bar(weap_x, weap_y, 170, 10, w['ammo'], w['max_ammo'], (0.15, 0.15, 0.2), (0.3, 0.7, 0.9))
+    if reload_timer > 0:
+        draw_text_2d(weap_x + 30, weap_y + 40, "RELOADING...", GLUT_BITMAP_HELVETICA_18, (1, 0.5, 0))
+    for i, wkey in enumerate(weapon_order):
+        slot_color = (0.1, 0.5, 0.9) if wkey == current_weapon else (0.4, 0.4, 0.5)
+        draw_text_2d(weap_x + i * 58, weap_y - 18, f"[{i+1}]{weapons[wkey]['name'][:3]}",
+                     GLUT_BITMAP_HELVETICA_12, slot_color)
 
     # Level up display
     if level_up_display > 0:
@@ -432,6 +485,43 @@ def draw_hud():
         glEnd()
         glPointSize(1)
         glLineWidth(1)
+
+        # Hit marker (X flash on hit)
+        if hit_markers:
+            hm = hit_markers[0]
+            alpha = min(hm['timer'] * 3, 1.0)
+            hm_size = 12 + (1 - hm['timer']) * 8
+            glColor4f(*hm['color'], alpha)
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glLineWidth(2.5)
+            glBegin(GL_LINES)
+            glVertex2f(cx - hm_size, cy - hm_size); glVertex2f(cx - 4, cy - 4)
+            glVertex2f(cx + 4, cy + 4); glVertex2f(cx + hm_size, cy + hm_size)
+            glVertex2f(cx + hm_size, cy - hm_size); glVertex2f(cx + 4, cy - 4)
+            glVertex2f(cx - 4, cy + 4); glVertex2f(cx - hm_size, cy + hm_size)
+            glEnd()
+            glLineWidth(1)
+            glDisable(GL_BLEND)
+
+    # Muzzle flash overlay
+    if muzzle_flash_timer > 0:
+        flash_alpha = muzzle_flash_timer * 4
+        flash_size = 20 + (1 - muzzle_flash_timer) * 30
+        fcx, fcy = WIN_W // 2, WIN_H // 2
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+        glColor4f(1, 0.8, 0.3, flash_alpha * 0.3)
+        glBegin(GL_TRIANGLE_FAN)
+        glVertex2f(fcx, fcy)
+        for i in range(13):
+            a = 2 * math.pi * i / 12
+            glVertex2f(fcx + flash_size * math.cos(a), fcy + flash_size * math.sin(a))
+        glEnd()
+        glDisable(GL_BLEND)
+
+    # Floating damage numbers
+    draw_floating_texts_2d()
 
     # Minimap
     draw_minimap()
@@ -593,10 +683,11 @@ def draw_guidelines():
         ("Q / E", "Strafe left / right"),
         ("Shift + Move", "Sprint (uses stamina)"),
         ("Space", "Fire weapon"),
+        ("1 / 2 / 3", "Switch weapon (Pistol/AR/Shotgun)"),
+        ("R", "Reload weapon"),
         ("F", "Toggle first-person / third-person"),
         ("Arrow Keys", "Zoom in/out (third person)"),
         ("P", "Pause game"),
-        ("R", "Restart (when dead)"),
         ("ESC", "Quit game"),
     ]
     for key, desc in controls:
@@ -614,6 +705,8 @@ def draw_guidelines():
         "- Quick kills build COMBOS for score multipliers (up to 5x)",
         "- Kill streaks earn bonus points",
         "- Collect power-ups scattered across the arena",
+        "- Headshots deal double damage!",
+        "- Kills restore ammo to all weapons",
     ]
     for tip in tips:
         draw_text_2d(cx - 220, y, tip, GLUT_BITMAP_HELVETICA_12, (0.3, 0.3, 0.35))
@@ -1054,27 +1147,135 @@ def draw_enemy_health_bar(enemy):
 
 
 def draw_powerup_3d(pu):
-    """Draw a rotating, bobbing power-up"""
+    """Draw a rotating, bobbing power-up with distinct shape per type"""
     if not pu['active']:
         return
     ptype = powerup_types[pu['type']]
-    bob = 25 + 12 * math.sin(game_time * 2 + pu['pos'][0] * 0.1)
+    bob = 30 + 14 * math.sin(game_time * 2.5 + pu['pos'][0] * 0.1)
+    rot = game_time * 90
 
     glPushMatrix()
     glTranslatef(pu['pos'][0], pu['pos'][1], bob)
-    glRotatef(game_time * 90, 0, 0, 1)
-    glRotatef(game_time * 45, 1, 0, 0)
-    glColor3f(*ptype['color'])
-    glutSolidCube(22)
+
+    # Glow ring around power-up
+    glDisable(GL_LIGHTING)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+    glow_pulse = 0.3 + 0.2 * math.sin(game_time * 4)
+    glColor4f(*ptype['color'], glow_pulse)
+    glBegin(GL_TRIANGLE_FAN)
+    glVertex3f(0, 0, 0)
+    for i in range(25):
+        a = 2 * math.pi * i / 24
+        glVertex3f(28 * math.cos(a), 28 * math.sin(a), 0)
+    glEnd()
+    glDisable(GL_BLEND)
+    glEnable(GL_LIGHTING)
+
+    glRotatef(rot, 0, 0, 1)
+
+    if pu['type'] == 'health':
+        # Green plus/cross shape
+        glColor3f(0.1, 0.95, 0.2)
+        glPushMatrix()
+        glScalef(24, 8, 8)
+        glutSolidCube(1)
+        glPopMatrix()
+        glPushMatrix()
+        glScalef(8, 24, 8)
+        glutSolidCube(1)
+        glPopMatrix()
+        glPushMatrix()
+        glScalef(8, 8, 24)
+        glutSolidCube(1)
+        glPopMatrix()
+
+    elif pu['type'] == 'speed':
+        # Blue diamond
+        glColor3f(0.1, 0.5, 1.0)
+        glRotatef(game_time * 120, 1, 0, 0)
+        glPushMatrix()
+        glScalef(12, 12, 20)
+        glutSolidOctahedron()
+        glPopMatrix()
+        # Speed lines
+        glDisable(GL_LIGHTING)
+        glColor3f(0.3, 0.7, 1.0)
+        glLineWidth(2)
+        for i in range(3):
+            a = 2 * math.pi * i / 3
+            glBegin(GL_LINES)
+            glVertex3f(8 * math.cos(a), 8 * math.sin(a), -5)
+            glVertex3f(14 * math.cos(a), 14 * math.sin(a), 10)
+            glEnd()
+        glLineWidth(1)
+        glEnable(GL_LIGHTING)
+
+    elif pu['type'] == 'damage':
+        # Red spiky star
+        glColor3f(1.0, 0.15, 0.1)
+        glRotatef(game_time * 60, 1, 1, 0)
+        q = gluNewQuadric()
+        gluSphere(q, 8, 8, 8)
+        for i in range(6):
+            glPushMatrix()
+            ax = 1 if i < 2 else 0
+            ay = 1 if 2 <= i < 4 else 0
+            az = 1 if i >= 4 else 0
+            sign = 1 if i % 2 == 0 else -1
+            glTranslatef(ax * sign * 14, ay * sign * 14, az * sign * 14)
+            glScalef(4, 4, 4)
+            glutSolidOctahedron()
+            glPopMatrix()
+
+    elif pu['type'] == 'shield':
+        # Yellow shield dome with ring
+        glColor4f(0.9, 0.85, 0.1, 0.8)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        q = gluNewQuadric()
+        gluSphere(q, 12, 12, 12)
+        glDisable(GL_BLEND)
+        glColor3f(1.0, 0.95, 0.2)
+        glRotatef(90, 1, 0, 0)
+        glutSolidTorus(2, 16, 8, 16)
+
     glPopMatrix()
 
 
 def draw_player_shot(shot):
-    """Draw a player projectile"""
+    """Draw a player projectile with weapon-specific visuals"""
     glPushMatrix()
     glTranslatef(shot[0], shot[1], shot[2])
-    glColor3f(1, 0.6, 0)
-    glutSolidCube(shot_size)
+    w_type = shot[5] if len(shot) > 5 else 'assault_rifle'
+    w = weapons.get(w_type, weapons['assault_rifle'])
+    glColor3f(*w['color'])
+
+    if w_type == 'shotgun':
+        q = gluNewQuadric()
+        gluSphere(q, 3, 4, 4)
+    elif w_type == 'pistol':
+        glPushMatrix()
+        glRotatef(shot[3], 0, 0, 1)
+        glScalef(3, 8, 3)
+        glutSolidCube(1)
+        glPopMatrix()
+    else:
+        # Assault rifle tracer
+        glDisable(GL_LIGHTING)
+        glPushMatrix()
+        glRotatef(shot[3], 0, 0, 1)
+        glScalef(2.5, 12, 2.5)
+        glutSolidCube(1)
+        glPopMatrix()
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+        glColor4f(1, 0.7, 0.2, 0.4)
+        q = gluNewQuadric()
+        gluSphere(q, 6, 6, 6)
+        glDisable(GL_BLEND)
+        glEnable(GL_LIGHTING)
+
     glPopMatrix()
 
 
@@ -1152,10 +1353,20 @@ def draw_fp_gun():
         sway_x = math.sin(game_time * 8) * 0.012
         sway_y = abs(math.sin(game_time * 8)) * 0.008
 
-    # Position: bottom right of viewport
-    glTranslatef(0.35 + sway_x, -0.4 + sway_y, -0.85)
-    glRotatef(-8, 0, 1, 0)
-    glRotatef(-2, 1, 0, 0)
+    # Position: bottom right of viewport (varies by weapon)
+    if current_weapon == 'pistol':
+        glTranslatef(0.3 + sway_x, -0.32 + sway_y, -0.6)
+        glScalef(0.65, 0.65, 0.55)
+        glRotatef(-5, 0, 1, 0)
+    elif current_weapon == 'shotgun':
+        glTranslatef(0.32 + sway_x, -0.42 + sway_y, -0.9)
+        glScalef(1.1, 1.2, 1.15)
+        glRotatef(-8, 0, 1, 0)
+        glRotatef(-2, 1, 0, 0)
+    else:
+        glTranslatef(0.35 + sway_x, -0.4 + sway_y, -0.85)
+        glRotatef(-8, 0, 1, 0)
+        glRotatef(-2, 1, 0, 0)
 
     # Receiver body
     glColor3f(0.24, 0.24, 0.3)
@@ -1367,19 +1578,26 @@ def spawn_powerup():
 
 
 def fire_weapon():
-    """Fire a projectile from the player's weapon"""
-    global fire_cooldown, total_shots_fired
-    if fire_cooldown > 0:
+    """Fire projectile(s) from the player's current weapon"""
+    global fire_cooldown, total_shots_fired, muzzle_flash_timer
+    if fire_cooldown > 0 or reload_timer > 0:
         return
-    fire_cooldown = fire_rate
+
+    w = weapons[current_weapon]
+    if w['ammo'] <= 0:
+        start_reload()
+        return
+
+    fire_cooldown = w['fire_rate']
+    w['ammo'] -= 1
     total_shots_fired += 1
+    muzzle_flash_timer = 0.12
 
     if fp_view:
         ang = math.radians(p_dir)
         x = p_pos[0] + 15 * math.sin(ang)
         y = p_pos[1] - 15 * math.cos(ang)
         z = p_pos[2] + 90
-        spread = 0.5
     else:
         ang = math.radians(p_dir - 90)
         off_x = gun_pos[0] * math.cos(ang) - gun_pos[1] * math.sin(ang)
@@ -1387,10 +1605,35 @@ def fire_weapon():
         x = p_pos[0] + off_x
         y = p_pos[1] + off_y
         z = p_pos[2] + gun_pos[2]
-        spread = 0.3
 
-    direction = p_dir + random.uniform(-spread, spread)
-    shots.append([x, y, z, direction, p_damage_mult])
+    for _ in range(w['pellets']):
+        direction = p_dir + random.uniform(-w['spread'], w['spread'])
+        shots.append([x, y, z, direction, p_damage_mult * w['damage'] / 10.0, current_weapon])
+
+    # Auto-reload when empty
+    if w['ammo'] <= 0:
+        start_reload()
+
+
+def start_reload():
+    """Start reloading the current weapon"""
+    global reload_timer
+    w = weapons[current_weapon]
+    if w['ammo'] < w['max_ammo'] and reload_timer <= 0:
+        reload_timer = w['reload_time']
+        add_notification(f"Reloading {w['name']}...", (0.8, 0.8, 0.2), 1.5)
+
+
+def switch_weapon(index):
+    """Switch to weapon at given index"""
+    global current_weapon, fire_cooldown, reload_timer
+    if 0 <= index < len(weapon_order):
+        new_weapon = weapon_order[index]
+        if new_weapon != current_weapon:
+            current_weapon = new_weapon
+            fire_cooldown = 0.3
+            reload_timer = 0
+            add_notification(f"Switched to {weapons[current_weapon]['name']}", (0.8, 0.9, 1.0), 1.5)
 
 
 def enemy_fire(enemy):
@@ -1612,15 +1855,18 @@ def update_projectiles():
     """Update player projectile positions and check for obstacle collisions"""
     to_remove = []
     for s in shots:
+        w_type = s[5] if len(s) > 5 else 'assault_rifle'
+        w = weapons.get(w_type, weapons['assault_rifle'])
+        spd = w['shot_speed']
         ang = math.radians(s[3] - 90)
-        s[0] += shot_spd * math.cos(ang) * delta_time * 60
-        s[1] += shot_spd * math.sin(ang) * delta_time * 60
+        s[0] += spd * math.cos(ang) * delta_time * 60
+        s[1] += spd * math.sin(ang) * delta_time * 60
 
         if (s[0] > GRID or s[0] < -GRID or s[1] > GRID or s[1] < -GRID):
             to_remove.append(s)
-        elif check_obstacle_collision([s[0], s[1]], radius=shot_size / 2):
+        elif check_obstacle_collision([s[0], s[1]], radius=w['shot_size'] / 2):
             to_remove.append(s)
-            spawn_particles([s[0], s[1], s[2]], (1, 0.5, 0), 3)
+            spawn_particles([s[0], s[1], s[2]], w['color'], 3)
 
     for s in to_remove:
         if s in shots:
@@ -1660,7 +1906,7 @@ def update_enemy_projectiles():
 
 
 def detect_hits():
-    """Detect player projectile hits on enemies"""
+    """Detect player projectile hits on enemies with hit markers and damage numbers"""
     global p_score, total_shots_hit, combo_count, combo_timer, combo_multiplier
     global kill_streak, best_streak, best_combo, kills_this_level, total_kills
 
@@ -1674,8 +1920,33 @@ def detect_hits():
             hit_r = et['size'] + 12
             if dx * dx + dy * dy <= hit_r * hit_r:
                 dmg = 10 * s[4]  # base damage * multiplier
+
+                # Headshot detection (hit near top of enemy)
+                headshot = False
+                if s[2] > et['size'] * 1.6:
+                    dmg *= 2.0
+                    headshot = True
+
                 e['hp'] -= dmg
                 total_shots_hit += 1
+
+                # Hit marker
+                hm_color = (1, 0.2, 0.2) if headshot else (1, 1, 1)
+                hit_markers.append({'timer': 0.3, 'color': hm_color})
+
+                # Floating damage number
+                dmg_text = f"{int(dmg)}"
+                if headshot:
+                    dmg_text = f"HEADSHOT! {int(dmg)}"
+                text_color = (1, 0.3, 0.3) if headshot else (1, 1, 0.2)
+                floating_texts.append({
+                    'text': dmg_text,
+                    'x': WIN_W // 2 + random.uniform(-40, 40),
+                    'y': WIN_H // 2 + random.uniform(-20, 30),
+                    'vy': 2.0,
+                    'timer': 1.2,
+                    'color': text_color,
+                })
 
                 if s in shots:
                     shots.remove(s)
@@ -1689,11 +1960,17 @@ def detect_hits():
                     best_combo = max(best_combo, combo_count)
 
                     points = int(et['points'] * combo_multiplier)
+                    if headshot:
+                        points = int(points * 1.5)
                     p_score += points
                     kill_streak += 1
                     best_streak = max(best_streak, kill_streak)
                     kills_this_level += 1
                     total_kills += 1
+
+                    # Ammo reward on kill
+                    for ww in weapons.values():
+                        ww['ammo'] = min(ww['ammo'] + 3, ww['max_ammo'])
 
                     # Streak bonuses
                     if kill_streak == 5:
@@ -1706,7 +1983,18 @@ def detect_hits():
                         p_score += 200
                         add_notification("GODLIKE! +200 bonus", (1, 0, 0), 3)
 
-                    spawn_particles(e['pos'], et['color'], 12)
+                    spawn_particles(e['pos'], et['color'], 15)
+
+                    # Kill floating text
+                    kill_text = f"+{points}"
+                    floating_texts.append({
+                        'text': kill_text,
+                        'x': WIN_W // 2 + random.uniform(-30, 30),
+                        'y': WIN_H // 2 + 40,
+                        'vy': 1.5,
+                        'timer': 2.0,
+                        'color': (0.2, 1.0, 0.2),
+                    })
 
                     type_label = e['type'].capitalize()
                     add_notification(f"{type_label} eliminated! +{points} (x{combo_multiplier:.0f})",
@@ -1814,6 +2102,21 @@ def update_notifications():
     notifications[:] = [n for n in notifications if n['timer'] > 0]
 
 
+def update_floating_texts():
+    """Update floating text positions and timers"""
+    for ft in floating_texts:
+        ft['y'] += ft['vy'] * delta_time * 60
+        ft['timer'] -= delta_time
+    floating_texts[:] = [ft for ft in floating_texts if ft['timer'] > 0]
+
+
+def update_hit_markers():
+    """Update hit marker timers"""
+    for hm in hit_markers:
+        hm['timer'] -= delta_time
+    hit_markers[:] = [hm for hm in hit_markers if hm['timer'] > 0]
+
+
 def update_pulse():
     """Update enemy pulsing animation"""
     global t_pulse_t, t_pulse
@@ -1854,7 +2157,7 @@ def init_game():
     global total_shots_fired, total_shots_hit, time_survived
     global zone_radius, zone_target_radius, zone_next_shrink_time, zone_center, zone_warning
     global fire_cooldown, damage_flash, level_up_display, powerup_spawn_timer
-    global game_time
+    global game_time, current_weapon, muzzle_flash_timer, reload_timer
 
     game_state = STATE_PLAYING
     p_pos = [0, 0, 0]
@@ -1897,6 +2200,15 @@ def init_game():
     damage_flash = 0
     level_up_display = 0
     powerup_spawn_timer = 0
+    muzzle_flash_timer = 0
+    reload_timer = 0
+    hit_markers.clear()
+    floating_texts.clear()
+
+    # Reset weapon ammo
+    current_weapon = 'assault_rifle'
+    for w in weapons.values():
+        w['ammo'] = w['max_ammo']
 
     shots.clear()
     enemy_shots.clear()
@@ -1981,6 +2293,14 @@ def keyboardListener(key, x, y):
             fp_view = not fp_view
         elif key == b' ':
             fire_weapon()
+        elif key_lower == b'r':
+            start_reload()
+        elif key == b'1':
+            switch_weapon(0)
+        elif key == b'2':
+            switch_weapon(1)
+        elif key == b'3':
+            switch_weapon(2)
 
 
 def keyboardUpListener(key, x, y):
@@ -2079,7 +2399,12 @@ def update_time():
 
 
 def idle():
-    """Main game loop - updates all game logic"""
+    """Main game loop - updates all game logic with frame rate limiting"""
+    global muzzle_flash_timer, reload_timer
+
+    # Frame rate limiting for smoothness
+    frame_start = time.time()
+
     update_time()
 
     if game_state == STATE_PLAYING:
@@ -2094,7 +2419,21 @@ def idle():
         update_combo()
         update_particles()
         update_notifications()
+        update_floating_texts()
+        update_hit_markers()
         check_level_up()
+
+        # Muzzle flash decay
+        if muzzle_flash_timer > 0:
+            muzzle_flash_timer -= delta_time
+
+        # Reload timer
+        if reload_timer > 0:
+            reload_timer -= delta_time
+            if reload_timer <= 0:
+                reload_timer = 0
+                weapons[current_weapon]['ammo'] = weapons[current_weapon]['max_ammo']
+                add_notification(f"{weapons[current_weapon]['name']} reloaded!", (0.2, 1, 0.2), 1.5)
 
         # Respawn enemies if too few alive
         alive_count = sum(1 for e in enemies if e['alive'])
@@ -2102,6 +2441,12 @@ def idle():
             spawn_enemy(random.choice(['grunt', 'scout']))
 
     glutPostRedisplay()
+
+    # Sleep to maintain target FPS
+    elapsed = time.time() - frame_start
+    sleep_time = frame_sleep_time - elapsed
+    if sleep_time > 0.001:
+        time.sleep(sleep_time)
 
 
 def showScreen():
