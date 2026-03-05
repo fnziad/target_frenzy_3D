@@ -93,14 +93,8 @@ p_stamina_regen = 0.3
 p_sprinting = False
 
 # Input
-keys = {b'w': False, b's': False, b'a': False, b'd': False}
+keys = {b'w': False, b's': False, b'a': False, b'd': False, b'q': False, b'e': False}
 shift_held = False
-
-# Mouse look
-mouse_sens = 0.15
-mouse_center_x = 0
-mouse_center_y = 0
-mouse_warping = False
 
 # ============================================================
 # WEAPON
@@ -292,7 +286,6 @@ def take_damage(amount):
     if p_hp <= 0:
         p_hp = 0
         game_state = STATE_GAME_OVER
-        glutSetCursor(GLUT_CURSOR_INHERIT)
         add_notification("YOU DIED!", color=(1, 0, 0), duration=5.0)
 
 
@@ -385,7 +378,7 @@ def draw_hud():
                          GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.2, 0.2))
 
     # View mode
-    view_text = "[FP] Mouse: Aim | Right-click: 3P" if fp_view else "[3P] Mouse: Aim | Right-click: FP | Arrows: camera"
+    view_text = "[FP] A/D: Rotate | Q/E: Strafe | F: 3P" if fp_view else "[3P] A/D: Rotate | F: FP | Arrows: camera"
     draw_text_2d(10, 15, view_text, GLUT_BITMAP_HELVETICA_12, (0.6, 0.6, 0.6))
 
     # Sprint hint
@@ -590,11 +583,11 @@ def draw_guidelines():
     y -= 30
     controls = [
         ("W / S", "Move forward / backward"),
-        ("A / D", "Strafe left / right"),
-        ("Mouse", "Look / Aim"),
+        ("A / D", "Rotate left / right"),
+        ("Q / E", "Strafe left / right"),
         ("Shift + Move", "Sprint (uses stamina)"),
-        ("Left Click / Space", "Fire weapon"),
-        ("Right Click / F", "Toggle first-person view"),
+        ("Space", "Fire weapon"),
+        ("F", "Toggle first-person / third-person"),
         ("Arrow Keys", "Camera control (third person)"),
         ("P", "Pause game"),
         ("R", "Restart (when dead)"),
@@ -1278,9 +1271,15 @@ def update_player():
         if p_shield_timer <= 0:
             p_shield = 0
 
+    # Rotation (A/D keys)
+    rot_speed = 4.0 * delta_time * 60
+    if keys[b'a']:
+        p_dir += rot_speed
+    if keys[b'd']:
+        p_dir -= rot_speed
     p_dir %= 360
 
-    # Movement (WASD with strafe) - delta-time scaled
+    # Movement (W/S forward/back, Q/E strafe) - delta-time scaled
     dt_scale = delta_time * 60
     ang = math.radians(p_dir - 90)
     move_x = move_y = 0
@@ -1290,10 +1289,10 @@ def update_player():
     if keys[b's']:
         move_x -= current_speed * math.cos(ang) * dt_scale
         move_y -= current_speed * math.sin(ang) * dt_scale
-    if keys[b'a']:
+    if keys[b'q']:
         move_x += current_speed * math.cos(ang + math.pi / 2) * dt_scale
         move_y += current_speed * math.sin(ang + math.pi / 2) * dt_scale
-    if keys[b'd']:
+    if keys[b'e']:
         move_x += current_speed * math.cos(ang - math.pi / 2) * dt_scale
         move_y += current_speed * math.sin(ang - math.pi / 2) * dt_scale
 
@@ -1683,9 +1682,6 @@ def init_game():
     p_dir = 0
     p_mom = [0, 0, 0]
 
-    # Hide cursor for mouse look
-    glutSetCursor(GLUT_CURSOR_NONE)
-    glutWarpPointer(mouse_center_x, mouse_center_y)
     p_hp = p_max_hp
     p_score = 0
     p_shield = 0
@@ -1789,8 +1785,6 @@ def keyboardListener(key, x, y):
     if game_state == STATE_PAUSED:
         if key_lower == b'p':
             game_state = STATE_PLAYING
-            glutSetCursor(GLUT_CURSOR_NONE)
-            glutWarpPointer(mouse_center_x, mouse_center_y)
         return
 
     # Playing
@@ -1799,7 +1793,6 @@ def keyboardListener(key, x, y):
             keys[key_lower] = True
         if key_lower == b'p':
             game_state = STATE_PAUSED
-            glutSetCursor(GLUT_CURSOR_INHERIT)
         elif key_lower == b'f':
             fp_view = not fp_view
         elif key == b' ':
@@ -1838,32 +1831,9 @@ def specialKeyListener(key, x, y):
         cam_ang += 5
 
 
-def passiveMotionListener(x, y):
-    """Handle mouse movement for look/aim"""
-    global p_dir, mouse_warping
-
-    if game_state != STATE_PLAYING:
-        return
-    if mouse_warping:
-        mouse_warping = False
-        return
-
-    dx = x - mouse_center_x
-    p_dir = (p_dir - dx * mouse_sens) % 360
-
-    mouse_warping = True
-    glutWarpPointer(mouse_center_x, mouse_center_y)
-
-
 def mouseListener(button, state, x, y):
-    """Handle mouse button events"""
-    global fp_view
-    if game_state != STATE_PLAYING:
-        return
-    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
-        fire_weapon()
-    elif button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
-        fp_view = not fp_view
+    """Handle mouse button events (minimal, keyboard preferred)"""
+    pass
 
 
 # ============================================================
@@ -1997,7 +1967,7 @@ def init_graphics():
 
 def main():
     """Initialize OpenGL and start the game"""
-    global WIN_W, WIN_H, last_time, mouse_center_x, mouse_center_y
+    global WIN_W, WIN_H, last_time
 
     glutInit()
     WIN_W = glutGet(GLUT_SCREEN_WIDTH)
@@ -2011,17 +1981,12 @@ def main():
     init_graphics()
     last_time = time.time()
 
-    mouse_center_x = WIN_W // 2
-    mouse_center_y = WIN_H // 2
-
     glutDisplayFunc(showScreen)
     glutIdleFunc(idle)
     glutKeyboardFunc(keyboardListener)
     glutKeyboardUpFunc(keyboardUpListener)
     glutSpecialFunc(specialKeyListener)
     glutMouseFunc(mouseListener)
-    glutPassiveMotionFunc(passiveMotionListener)
-    glutMotionFunc(passiveMotionListener)
     glutMainLoop()
 
 
