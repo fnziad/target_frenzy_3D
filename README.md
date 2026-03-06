@@ -25,6 +25,26 @@ Fight through waves of intelligent enemies across a massive arena while a shrink
 
 ---
 
+## Screenshots
+
+| Name Entry | Controls & Guidelines |
+|:---:|:---:|
+| ![Name Entry](previews/01_name_entry.png) | ![Guidelines](previews/02_guidelines.png) |
+
+| Third-Person Arena | First-Person Shotgun |
+|:---:|:---:|
+| ![Third Person Gameplay](previews/03_third_person_gameplay.png) | ![First Person Shotgun](previews/04_first_person_shotgun.png) |
+
+| FP Zone Damage | FP Combat Close-Up |
+|:---:|:---:|
+| ![Zone Damage](previews/05_fp_zone_damage.png) | ![Combat Close-Up](previews/06_fp_combat_closeup.png) |
+
+| Zone Boundary Warning | Game Over Stats |
+|:---:|:---:|
+| ![Zone Boundary](previews/07_zone_boundary.png) | ![Game Over Stats](previews/09_game_over_stats.png) |
+
+---
+
 ## Features at a Glance
 
 ### 🔫 Three-Weapon Arsenal
@@ -54,13 +74,13 @@ Fight through waves of intelligent enemies across a massive arena while a shrink
 
 ### 💊 Power-Ups (with 3D models)
 
-| Power-Up     | Shape             | Effect                      |
-| ------------ | ----------------- | --------------------------- |
-| Health Pack  | Green cross       | +30 HP                      |
-| Speed Boost  | Blue diamond      | 1.5× speed for 10 s         |
-| Damage Boost | Red spiky star    | 2× damage for 10 s          |
-| Shield       | Yellow dome       | 50 HP absorb for 15 s       |
-| Ammo Crate   | Orange crate      | +25% reserve for all weapons |
+| Power-Up     | Shape          | Effect                       |
+| ------------ | -------------- | ---------------------------- |
+| Health Pack  | Green cross    | +30 HP                       |
+| Speed Boost  | Blue diamond   | 1.5× speed for 10 s          |
+| Damage Boost | Red spiky star | 2× damage for 10 s           |
+| Shield       | Yellow dome    | 50 HP absorb for 15 s        |
+| Ammo Crate   | Orange crate   | +25% reserve for all weapons |
 
 - **Ammo crates drop from killed enemies** (40% drop chance)
 - Ammo crates also spawn randomly in the arena every 10 seconds
