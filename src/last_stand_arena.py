@@ -390,6 +390,32 @@ def draw_hud():
     kills_text = f"Kills: {kills_this_level}/{kills_to_advance}"
     draw_text_2d(WIN_W // 2 - 50, WIN_H - 48, kills_text, GLUT_BITMAP_HELVETICA_12, (0.3, 0.3, 0.35))
 
+    # Zone countdown timer (top center, below kills)
+    if current_level >= 2 and zone_target_radius > 800:
+        time_to_shrink = max(zone_next_shrink_time - game_time, 0)
+        if time_to_shrink <= 5:
+            # Critical pop: large red blinking text
+            if int(game_time * 6) % 2 == 0:
+                draw_text_2d(WIN_W // 2 - 80, WIN_H - 72,
+                             f"!! ZONE IN {int(time_to_shrink) + 1}s !!",
+                             GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.1, 0.1))
+        elif time_to_shrink <= 10:
+            # Warning pop: orange pulsing
+            pop_pulse = 0.7 + 0.3 * math.sin(game_time * 10)
+            draw_text_2d(WIN_W // 2 - 70, WIN_H - 70,
+                         f"ZONE IN {int(time_to_shrink) + 1}s",
+                         GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.45 * pop_pulse, 0))
+        elif time_to_shrink <= 20:
+            # Early warning: yellow
+            draw_text_2d(WIN_W // 2 - 55, WIN_H - 68,
+                         f"Zone in {int(time_to_shrink) + 1}s",
+                         GLUT_BITMAP_HELVETICA_18, (1, 0.9, 0.1))
+        else:
+            # Normal: subtle white
+            draw_text_2d(WIN_W // 2 - 48, WIN_H - 68,
+                         f"Zone in {int(time_to_shrink)}s",
+                         GLUT_BITMAP_HELVETICA_12, (0.5, 0.5, 0.55))
+
     # Player name
     draw_text_2d(10, WIN_H - 108, player_name, GLUT_BITMAP_HELVETICA_12, (0.2, 0.2, 0.5))
 
@@ -533,7 +559,59 @@ def draw_hud():
     # Minimap
     draw_minimap()
 
-    # Damage flash overlay
+    # Critical low-health red aura vignette (pulses faster as HP drops)
+    if p_hp <= 25 and p_hp > 0:
+        hp_ratio = p_hp / 25.0                          # 1.0 at 25hp -> 0.0 at 0hp
+        pulse_rate = 2.5 + (1.0 - hp_ratio) * 9.0      # 2.5 Hz -> 11.5 Hz
+        pulse_val = 0.5 + 0.5 * math.sin(game_time * pulse_rate * math.pi * 2)
+        peak_alpha = 0.18 + (1.0 - hp_ratio) * 0.40    # 0.18 -> 0.58
+        aura_alpha = pulse_val * peak_alpha
+        aura_depth = int(WIN_H * (0.30 + (1.0 - hp_ratio) * 0.28))  # 30%->58% screen height
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glShadeModel(GL_SMOOTH)
+        # Top vignette
+        glBegin(GL_QUADS)
+        glColor4f(1, 0, 0, aura_alpha); glVertex2f(0, WIN_H)
+        glColor4f(1, 0, 0, aura_alpha); glVertex2f(WIN_W, WIN_H)
+        glColor4f(1, 0, 0, 0);          glVertex2f(WIN_W, WIN_H - aura_depth)
+        glColor4f(1, 0, 0, 0);          glVertex2f(0, WIN_H - aura_depth)
+        glEnd()
+        # Bottom vignette
+        glBegin(GL_QUADS)
+        glColor4f(1, 0, 0, aura_alpha); glVertex2f(0, 0)
+        glColor4f(1, 0, 0, aura_alpha); glVertex2f(WIN_W, 0)
+        glColor4f(1, 0, 0, 0);          glVertex2f(WIN_W, aura_depth)
+        glColor4f(1, 0, 0, 0);          glVertex2f(0, aura_depth)
+        glEnd()
+        # Left vignette
+        glBegin(GL_QUADS)
+        glColor4f(1, 0, 0, aura_alpha); glVertex2f(0, 0)
+        glColor4f(1, 0, 0, aura_alpha); glVertex2f(0, WIN_H)
+        glColor4f(1, 0, 0, 0);          glVertex2f(aura_depth, WIN_H)
+        glColor4f(1, 0, 0, 0);          glVertex2f(aura_depth, 0)
+        glEnd()
+        # Right vignette
+        glBegin(GL_QUADS)
+        glColor4f(1, 0, 0, aura_alpha); glVertex2f(WIN_W, 0)
+        glColor4f(1, 0, 0, aura_alpha); glVertex2f(WIN_W, WIN_H)
+        glColor4f(1, 0, 0, 0);          glVertex2f(WIN_W - aura_depth, WIN_H)
+        glColor4f(1, 0, 0, 0);          glVertex2f(WIN_W - aura_depth, 0)
+        glEnd()
+        glShadeModel(GL_FLAT)
+        glDisable(GL_BLEND)
+        # "LOW HEALTH" warning text
+        if pulse_val > 0.6:
+            warn_alpha = (pulse_val - 0.6) / 0.4
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glColor4f(1, 0.05, 0.05, warn_alpha)
+            glRasterPos2f(WIN_W // 2 - 65, WIN_H // 2 - 80)
+            for ch in "! LOW HEALTH !":
+                glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, ord(ch))
+            glDisable(GL_BLEND)
+
+    # Damage flash overlay (on top of aura)
     if damage_flash > 0:
         draw_rect(0, 0, WIN_W, WIN_H, (1, 0, 0, min(damage_flash * 0.3, 0.4)))
 

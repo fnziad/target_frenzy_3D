@@ -41,7 +41,7 @@ Camera System
   - Arrow-key zoom in third-person mode
 
 Game Architecture
-  - Single-file Python game engine (~2730 lines)
+  - Single-file Python game engine (~2808 lines)
   - Entity-component style dictionaries for enemies, bullets, power-ups
   - Wave-based enemy spawning with difficulty scaling
   - Collision detection: AABB sphere vs sphere, bullet-enemy overlap
@@ -74,6 +74,8 @@ UI / UX
   - Bitmap font rendering for HUD text (glutBitmapCharacter)
   - Kill feed, crosshair, "mag | reserve" ammo counter, health/shield bars
   - Minimap, zone ring, combo/streak announcements, floating combat text
+  - Escalating zone countdown timer with pop/blink warning near shrink time
+  - Critical low-health full-screen red aura with blinking warning text
   - Name entry screen, main menu, game over / victory screens
   - FPS limiter (GLUT idle callback with sleep)
   - Pause / resume with overlay
@@ -155,6 +157,7 @@ BattleRoyale/
   Enemies       : Grunt, Tank, Scout, Sniper with increasing wave pressure
   Power-ups     : Health, Speed, Damage, Shield, Ammo Crate
   Zone Mechanic : Shrinking safe zone with damage outside the boundary
+                 Countdown warning pops as shrink approaches
   Progression   : Level-ups via kill targets; endless escalating survival
   Lose Condition: Health reaches zero
 

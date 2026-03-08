@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Python-3.7+-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
   <img src="https://img.shields.io/badge/OpenGL-PyOpenGL-5586A4?style=for-the-badge&logo=opengl&logoColor=white"/>
   <img src="https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/Lines_of_Code-2700+-f97316?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Lines_of_Code-2800+-f97316?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-8b5cf6?style=for-the-badge"/>
 </p>
 
@@ -97,11 +97,13 @@ Fight through waves of intelligent enemies across a massive arena while a shrink
 - **Floating damage numbers** — Damage pops up on screen in real time
 - **Muzzle flash overlay** — Visual recoil feedback when firing
 - **Particle effects** — Kills and impacts burst with coloured particles
+- **Critical low-health warning** — Full-screen blinking red aura with urgent pulse and LOW HEALTH alert
 
 ### 🏟️ Battle Royale Zone
 
 - 10 000 × 10 000 unit outdoor arena with procedural crates and pillars
 - Zone shrinks every 60 seconds starting from level 2
+- On-screen countdown timer pops with escalating urgency as shrink time approaches
 - Getting caught outside the zone deals continuous damage
 - Zone position drifts randomly to keep you moving
 
@@ -163,7 +165,7 @@ last_stand_arena/
 │   ├── *.png                  # README preview images
 │   └── last_stand_arena_gameplay.mp4
 ├── src/
-│   └── last_stand_arena.py   # Complete game engine (~2,730 lines)
+│   └── last_stand_arena.py   # Complete game engine (~2,808 lines)
 ├── run_game.py               # Launcher with controls reference
 ├── requirements.txt          # Single dependency: PyOpenGL
 ├── INSTALL.md                # Full installation guide
@@ -184,7 +186,7 @@ last_stand_arena/
 | Physics      | Momentum + friction, delta-time scaled, AABB + sphere  |
 | AI           | 4 behaviour trees: chase, zigzag, range-hold, direct   |
 | Frame rate   | 60 FPS target with sleep-based limiter                 |
-| Architecture | Single-file engine (~2,730 LOC), modular state machine |
+| Architecture | Single-file engine (~2,808 LOC), modular state machine |
 
 ---
 
